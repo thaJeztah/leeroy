@@ -121,6 +121,10 @@ func labelFromVersion(version, suffix string) string {
 		fallthrough
 	case strings.HasPrefix(suffix, "rc"):
 		fallthrough
+	case strings.HasPrefix(suffix, "ce"):
+		fallthrough
+	case strings.HasPrefix(suffix, "ee"):
+		fallthrough
 	case suffix == "":
 		return "version/" + version[0:strings.LastIndex(version, ".")]
 	// The default for unknown suffix is to consider the version unsupported.
@@ -129,10 +133,14 @@ func labelFromVersion(version, suffix string) string {
 	}
 }
 
+func extractVersionFromBody(body string) []string {
+	serverVersion := regexp.MustCompile(`Server:\s+Version:\s+(\d+\.\d+\.\d+)-?(\S*)`)
+	return serverVersion.FindStringSubmatch(body)
+}
+
 // IssueAddVersionLabel adds a version label to an issue if it matches the regex
 func (g GitHub) IssueAddVersionLabel(issueHook *octokat.IssueHook) error {
-	serverVersion := regexp.MustCompile(`Server:\s+Version:\s+(\d+\.\d+\.\d+)-?(\S*)`)
-	versionSubmatch := serverVersion.FindStringSubmatch(issueHook.Issue.Body)
+	versionSubmatch := extractVersionFromBody(issueHook.Issue.Body)
 	if len(versionSubmatch) < 3 {
 		return nil
 	}
